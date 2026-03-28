@@ -7,6 +7,8 @@ use components::display::FarbskalaModel;
 use components::display::OledCareModel;
 use components::display::ZielmodusModel;
 use components::fan::FanModel;
+use components::input::FnKeyModel;
+use components::input::GesturenModel;
 use relm4::adw;
 use relm4::adw::prelude::*;
 use relm4::prelude::*;
@@ -17,6 +19,8 @@ struct AppModel {
     oled_care: Controller<OledCareModel>,
     farbskala: Controller<FarbskalaModel>,
     zielmodus: Controller<ZielmodusModel>,
+    fn_key: Controller<FnKeyModel>,
+    gesten: Controller<GesturenModel>,
 }
 
 #[relm4::component]
@@ -46,6 +50,10 @@ impl SimpleComponent for AppModel {
                     add = farbskala_widget -> adw::PreferencesGroup {},
                     #[local_ref]
                     add = zielmodus_widget -> adw::PreferencesGroup {},
+                    #[local_ref]
+                    add = fn_key_widget -> adw::PreferencesGroup {},
+                    #[local_ref]
+                    add = gesten_widget -> adw::PreferencesGroup {},
                 },
             }
         }
@@ -61,6 +69,8 @@ impl SimpleComponent for AppModel {
         let oled_care = OledCareModel::builder().launch(()).detach();
         let farbskala = FarbskalaModel::builder().launch(()).detach();
         let zielmodus = ZielmodusModel::builder().launch(()).detach();
+        let fn_key = FnKeyModel::builder().launch(()).detach();
+        let gesten = GesturenModel::builder().launch(()).detach();
 
         let model = AppModel {
             battery,
@@ -68,12 +78,16 @@ impl SimpleComponent for AppModel {
             oled_care,
             farbskala,
             zielmodus,
+            fn_key,
+            gesten,
         };
         let battery_widget = model.battery.widget();
         let fan_widget = model.fan.widget();
         let oled_care_widget = model.oled_care.widget();
         let farbskala_widget = model.farbskala.widget();
         let zielmodus_widget = model.zielmodus.widget();
+        let fn_key_widget = model.fn_key.widget();
+        let gesten_widget = model.gesten.widget();
         let widgets = view_output!();
         ComponentParts { model, widgets }
     }

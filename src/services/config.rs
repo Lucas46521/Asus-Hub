@@ -10,6 +10,8 @@ pub struct AppConfig {
     pub oled_care_panel_autohide: bool,
     pub oled_care_transparenz: bool,
     pub fan_tiefschlaf_aktiv: bool,
+    pub input_gesten_aktiv: bool,
+    pub fn_key_gesperrt: bool,
 }
 
 impl Default for AppConfig {
@@ -21,6 +23,8 @@ impl Default for AppConfig {
             oled_care_panel_autohide: false,
             oled_care_transparenz: false,
             fan_tiefschlaf_aktiv: false,
+            input_gesten_aktiv: false,
+            fn_key_gesperrt: false,
         }
     }
 }
