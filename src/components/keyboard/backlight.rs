@@ -641,6 +641,7 @@ impl RuhezustandModel {
 
         let handle = tokio::spawn(async move {
             let mut child = match tokio::process::Command::new("swayidle")
+                .kill_on_drop(true)
                 .args([
                     "-w",
                     "timeout",
