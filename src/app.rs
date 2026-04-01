@@ -9,11 +9,16 @@ use crate::components::keyboard::RuhezustandModel;
 use crate::components::keyboard::TouchpadModel;
 use crate::components::system::battery::BatteryModel;
 use crate::components::system::fan::FanModel;
+use crate::search::NAV_ITEMS;
 use crate::tray;
 use relm4::adw;
 use relm4::adw::prelude::*;
 use relm4::prelude::*;
 use rust_i18n::t;
+
+// ---------------------------------------------------------------------------
+// App
+// ---------------------------------------------------------------------------
 
 #[derive(Debug)]
 pub enum AppMsg {
@@ -53,15 +58,10 @@ impl SimpleComponent for AppModel {
             #[wrap(Some)]
             set_content = &model.toast_overlay.clone() -> adw::ToastOverlay {
                 #[wrap(Some)]
-                set_child = &adw::ToolbarView {
-                    add_top_bar = &adw::HeaderBar {
-                        #[wrap(Some)]
-                        set_title_widget = &adw::ViewSwitcher {
-                            set_stack: Some(&my_stack),
-                            set_policy: adw::ViewSwitcherPolicy::Wide,
-                        },
-                    },
-                    set_content: Some(&my_stack),
+                set_child = &adw::NavigationSplitView {
+                    set_sidebar: Some(&sidebar_nav_page),
+                    set_content: Some(&content_nav_page),
+                    set_collapsed: false,
                 },
             }
         }
@@ -170,12 +170,11 @@ impl SimpleComponent for AppModel {
         let sound_modes_widget = model.sound_modes.widget();
         let volume_widget = model.volume_widget.widget();
 
-        let my_stack = adw::ViewStack::new();
+        // --- Content-Seiten ---
 
         let anzeige_page = adw::PreferencesPage::new();
         anzeige_page.add(oled_care_widget);
         anzeige_page.add(farbskala_widget);
-        my_stack.add_titled_with_icon(&anzeige_page, None, &t!("tab_display"), "monitor-symbolic");
 
         let tastatur_page = adw::PreferencesPage::new();
         tastatur_page.add(auto_beleuchtung_widget);
@@ -183,22 +182,10 @@ impl SimpleComponent for AppModel {
         tastatur_page.add(fn_key_widget);
         tastatur_page.add(touchpad_widget);
         tastatur_page.add(gesten_widget);
-        my_stack.add_titled_with_icon(
-            &tastatur_page,
-            None,
-            &t!("tab_keyboard"),
-            "input-keyboard-symbolic",
-        );
 
         let audio_page = adw::PreferencesPage::new();
         audio_page.add(volume_widget);
         audio_page.add(sound_modes_widget);
-        my_stack.add_titled_with_icon(
-            &audio_page,
-            None,
-            &t!("tab_audio"),
-            "audio-headset-symbolic",
-        );
 
         let system_page = adw::PreferencesPage::new();
         system_page.add(battery_widget);
@@ -238,12 +225,112 @@ impl SimpleComponent for AppModel {
 
         system_page.add(&lang_group);
 
-        my_stack.add_titled_with_icon(
-            &system_page,
-            None,
-            &t!("tab_system"),
-            "preferences-system-symbolic",
-        );
+        // --- Widget-Map für Scroll-to-Widget ---
+
+        let widget_map = std::collections::HashMap::from([
+            (
+                "oled_care",
+                oled_care_widget.clone().upcast::<gtk4::Widget>(),
+            ),
+            (
+                "farbskala",
+                farbskala_widget.clone().upcast::<gtk4::Widget>(),
+            ),
+            (
+                "auto_beleuchtung",
+                auto_beleuchtung_widget.clone().upcast::<gtk4::Widget>(),
+            ),
+            (
+                "ruhezustand",
+                ruhezustand_widget.clone().upcast::<gtk4::Widget>(),
+            ),
+            ("fn_key", fn_key_widget.clone().upcast::<gtk4::Widget>()),
+            ("gesten", gesten_widget.clone().upcast::<gtk4::Widget>()),
+            ("touchpad", touchpad_widget.clone().upcast::<gtk4::Widget>()),
+            ("volume", volume_widget.clone().upcast::<gtk4::Widget>()),
+            (
+                "sound_modes",
+                sound_modes_widget.clone().upcast::<gtk4::Widget>(),
+            ),
+            ("battery", battery_widget.clone().upcast::<gtk4::Widget>()),
+            ("fan", fan_widget.clone().upcast::<gtk4::Widget>()),
+            ("lang", lang_group.clone().upcast::<gtk4::Widget>()),
+        ]);
+
+        // --- ViewStack für den Content-Bereich ---
+
+        let content_stack = adw::ViewStack::new();
+        content_stack.set_transition_duration(250);
+        content_stack.set_enable_transitions(true);
+        content_stack.add_named(&anzeige_page, Some("display"));
+        content_stack.add_named(&tastatur_page, Some("keyboard"));
+        content_stack.add_named(&audio_page, Some("audio"));
+        content_stack.add_named(&system_page, Some("system"));
+        content_stack.set_visible_child_name("display");
+
+        let content_header = adw::HeaderBar::new();
+        let content_toolbar = adw::ToolbarView::new();
+        content_toolbar.add_top_bar(&content_header);
+        content_toolbar.set_content(Some(&content_stack));
+        let content_nav_page = adw::NavigationPage::new(&content_toolbar, &t!("tab_display"));
+
+        // --- Sidebar ---
+
+        let sidebar_list = gtk4::ListBox::new();
+        sidebar_list.add_css_class("navigation-sidebar");
+        sidebar_list.set_selection_mode(gtk4::SelectionMode::Single);
+
+        for (icon_name, title_key, _page_name) in &NAV_ITEMS {
+            let row = gtk4::ListBoxRow::new();
+            let hbox = gtk4::Box::new(gtk4::Orientation::Horizontal, 12);
+            hbox.set_margin_top(10);
+            hbox.set_margin_bottom(10);
+            hbox.set_margin_start(12);
+            hbox.set_margin_end(12);
+            let icon = gtk4::Image::from_icon_name(icon_name);
+            icon.set_pixel_size(16);
+            let label = gtk4::Label::new(Some(t!(*title_key).as_ref()));
+            label.set_halign(gtk4::Align::Start);
+            hbox.append(&icon);
+            hbox.append(&label);
+            row.set_child(Some(&hbox));
+            sidebar_list.append(&row);
+        }
+
+        // Seitenleisten-Auswahl → Stack-Seite + Header-Titel aktualisieren
+        let stack_c = content_stack.clone();
+        let nav_page_c = content_nav_page.clone();
+        sidebar_list.connect_row_selected(move |_, row| {
+            if let Some(row) = row {
+                let idx = row.index() as usize;
+                if let Some(&(_, title_key, page_name)) = NAV_ITEMS.get(idx) {
+                    stack_c.set_visible_child_name(page_name);
+                    nav_page_c.set_title(&t!(title_key));
+                }
+            }
+        });
+
+        if let Some(first_row) = sidebar_list.row_at_index(0) {
+            sidebar_list.select_row(Some(&first_row));
+        }
+
+        // --- Suche ---
+
+        let search_widgets =
+            crate::search::setup(&content_stack, &content_nav_page, &sidebar_list, widget_map);
+        content_stack.add_named(&search_widgets.scroll, Some("search"));
+
+        let sidebar_header = adw::HeaderBar::new();
+        sidebar_header.pack_end(&search_widgets.toggle);
+
+        let sidebar_toolbar = adw::ToolbarView::new();
+        sidebar_toolbar.add_top_bar(&sidebar_header);
+        sidebar_toolbar.add_top_bar(&search_widgets.bar);
+        sidebar_toolbar.set_content(Some(&sidebar_list));
+
+        let sidebar_nav_page = adw::NavigationPage::new(&sidebar_toolbar, &t!("app_title"));
+
+        // --- Widget-Baum erzeugen ---
 
         let widgets = view_output!();
 
