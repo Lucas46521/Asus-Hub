@@ -40,6 +40,13 @@ error_no_touchpad: "No touchpad found"
 error_abs_info: "ABS info not available: %{error}"
 error_event_read: "Failed to read event: %{error}"
 
+# oled_dimming
+oled_dimming_group_title: "OLED Flicker-Free Dimming"
+oled_dimming_group_desc: "Reduces OLED flickering at low brightness. For best results, set system brightness above 60% and use this slider to adjust perceived brightness."
+oled_dimming_slider_title: "Dimming Level"
+oled_dimming_warning: "* Image quality may be slightly affected when this feature is in use. This is normal and does not affect use of the display."
+oled_dimming_set: "OLED DC dimming set to %{value}%"
+
 # oled_care
 oled_care_group_title: "ASUS OLED Care"
 oled_care_pixel_refresh_title: "Pixel Refresh"

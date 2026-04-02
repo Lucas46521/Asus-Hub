@@ -11,6 +11,9 @@ fn default_abdunklung_schwelle() -> f64 {
 fn default_touchpad_aktiv() -> bool {
     true
 }
+fn default_dc_dimming() -> u32 {
+    100
+}
 fn default_language() -> String {
     "en".to_string()
 }
@@ -44,6 +47,8 @@ pub struct AppConfig {
     pub language: String,
     #[serde(default)]
     pub audio_profil: u32,
+    #[serde(default = "default_dc_dimming")]
+    pub oled_dc_dimming: u32,
 }
 
 impl Default for AppConfig {
@@ -67,6 +72,7 @@ impl Default for AppConfig {
             touchpad_aktiv: default_touchpad_aktiv(),
             language: default_language(),
             audio_profil: 0,
+            oled_dc_dimming: default_dc_dimming(),
         }
     }
 }

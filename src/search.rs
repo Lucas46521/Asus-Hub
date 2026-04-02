@@ -23,6 +23,20 @@ struct SearchItem {
 static SEARCH_INDEX: &[SearchItem] = &[
     // Anzeige
     SearchItem {
+        title_key: "oled_dimming_group_title",
+        page_icon: "monitor-symbolic",
+        page_title_key: "tab_display",
+        page_idx: 0,
+        component_key: "oled_dimming",
+    },
+    SearchItem {
+        title_key: "oled_dimming_slider_title",
+        page_icon: "monitor-symbolic",
+        page_title_key: "tab_display",
+        page_idx: 0,
+        component_key: "oled_dimming",
+    },
+    SearchItem {
         title_key: "oled_care_pixel_refresh_title",
         page_icon: "monitor-symbolic",
         page_title_key: "tab_display",
