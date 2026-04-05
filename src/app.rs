@@ -14,7 +14,8 @@ use crate::components::keyboard::RuhezustandModel;
 use crate::components::keyboard::TouchpadModel;
 use crate::components::system::battery::BatteryModel;
 use crate::components::system::fan::FanModel;
-use crate::search::NAV_ITEMS;
+use crate::search::sorted_nav_items;
+use std::rc::Rc;
 use crate::tray;
 use relm4::adw;
 use relm4::adw::prelude::*;
@@ -199,8 +200,10 @@ impl SimpleComponent for AppModel {
         tastatur_page.add(auto_beleuchtung_widget);
         tastatur_page.add(ruhezustand_widget);
         tastatur_page.add(fn_key_widget);
-        tastatur_page.add(touchpad_widget);
-        tastatur_page.add(gesten_widget);
+
+        let touchpad_page = adw::PreferencesPage::new();
+        touchpad_page.add(touchpad_widget);
+        touchpad_page.add(gesten_widget);
 
         let audio_page = adw::PreferencesPage::new();
         audio_page.add(volume_widget);
@@ -291,6 +294,7 @@ impl SimpleComponent for AppModel {
         content_stack.set_enable_transitions(true);
         content_stack.add_named(&anzeige_page, Some("display"));
         content_stack.add_named(&tastatur_page, Some("keyboard"));
+        content_stack.add_named(&touchpad_page, Some("touchpad"));
         content_stack.add_named(&audio_page, Some("audio"));
         content_stack.add_named(&system_page, Some("system"));
         content_stack.set_visible_child_name("display");
@@ -307,7 +311,9 @@ impl SimpleComponent for AppModel {
         sidebar_list.add_css_class("navigation-sidebar");
         sidebar_list.set_selection_mode(gtk4::SelectionMode::Single);
 
-        for (icon_name, title_key, _page_name) in &NAV_ITEMS {
+        let sorted_nav = Rc::new(sorted_nav_items());
+
+        for (icon_name, title_key, _page_name) in sorted_nav.iter() {
             let row = gtk4::ListBoxRow::new();
             let hbox = gtk4::Box::new(gtk4::Orientation::Horizontal, 12);
             hbox.set_margin_top(10);
@@ -327,10 +333,11 @@ impl SimpleComponent for AppModel {
         // Seitenleisten-Auswahl → Stack-Seite + Header-Titel aktualisieren
         let stack_c = content_stack.clone();
         let nav_page_c = content_nav_page.clone();
+        let sorted_nav_c = sorted_nav.clone();
         sidebar_list.connect_row_selected(move |_, row| {
             if let Some(row) = row {
                 let idx = row.index() as usize;
-                if let Some(&(_, title_key, page_name)) = NAV_ITEMS.get(idx) {
+                if let Some(&(_, title_key, page_name)) = sorted_nav_c.get(idx) {
                     stack_c.set_visible_child_name(page_name);
                     nav_page_c.set_title(&t!(title_key));
                 }
@@ -343,8 +350,13 @@ impl SimpleComponent for AppModel {
 
         // --- Suche ---
 
-        let search_widgets =
-            crate::search::setup(&content_stack, &content_nav_page, &sidebar_list, widget_map);
+        let search_widgets = crate::search::setup(
+            (*sorted_nav).clone(),
+            &content_stack,
+            &content_nav_page,
+            &sidebar_list,
+            widget_map,
+        );
         content_stack.add_named(&search_widgets.scroll, Some("search"));
 
         let sidebar_header = adw::HeaderBar::new();
