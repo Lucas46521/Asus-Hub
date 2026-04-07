@@ -4,6 +4,8 @@ version = "1.0.0"
 edition = "2024"
 license = "GPL-3.0-or-later"
 repository = "https://github.com/Traciges/Asus-Hub"
+description = "Unofficial MyAsus Clone for Asus Laptops"
+authors = ["Guido Philipp"]
 
 [dependencies]
 relm4 = { version = "0.10", features = ["libadwaita"] }
@@ -34,4 +36,12 @@ assets = [
     ["packaging/de.guido.asus-hub.desktop", "usr/share/applications/", "644"],
     ["packaging/de.guido.asus-hub.metainfo.xml", "usr/share/metainfo/", "644"],
     ["assets/trayicon.png", "usr/share/icons/hicolor/128x128/apps/de.guido.asus-hub.png", "644"],
+]
+
+[package.metadata.generate-rpm]
+assets = [
+    { source = "target/release/asus-hub", dest = "/usr/bin/asus-hub", mode = "755" },
+    { source = "packaging/de.guido.asus-hub.desktop", dest = "/usr/share/applications/de.guido.asus-hub.desktop", mode = "644" },
+    { source = "packaging/de.guido.asus-hub.metainfo.xml", dest = "/usr/share/metainfo/de.guido.asus-hub.metainfo.xml", mode = "644" },
+    { source = "assets/trayicon.png", dest = "/usr/share/icons/hicolor/128x128/apps/de.guido.asus-hub.png", mode = "644" }
 ]
