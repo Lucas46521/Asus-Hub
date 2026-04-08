@@ -34,12 +34,12 @@ fn filename_for_index(index: u32) -> Option<&'static str> {
     }
 }
 
-pub struct FarbskalaModel {
+pub struct ColorGamutModel {
     color_gamut_index: u32,
     icm_base_path: Option<PathBuf>,
 }
 
-impl FarbskalaModel {
+impl ColorGamutModel {
     fn color_gamut_description(&self) -> std::borrow::Cow<'static, str> {
         match self.color_gamut_index {
             1 => t!("farbskala_desc_srgb"),
@@ -51,23 +51,23 @@ impl FarbskalaModel {
 }
 
 #[derive(Debug)]
-pub enum FarbskalaMsg {
+pub enum ColorGamutMsg {
     ChangeColorGamut(u32),
 }
 
 #[derive(Debug)]
-pub enum FarbskalaCommandOutput {
+pub enum ColorGamutCommandOutput {
     IcmReady(PathBuf),
     ProfileApplied(u32),
-    Fehler(String),
+    Error(String),
 }
 
 #[relm4::component(pub)]
-impl Component for FarbskalaModel {
+impl Component for ColorGamutModel {
     type Init = ();
-    type Input = FarbskalaMsg;
+    type Input = ColorGamutMsg;
     type Output = String;
-    type CommandOutput = FarbskalaCommandOutput;
+    type CommandOutput = ColorGamutCommandOutput;
 
     view! {
         adw::PreferencesGroup {
@@ -78,11 +78,11 @@ impl Component for FarbskalaModel {
                 set_title: &t!("farbskala_title"),
                 #[watch]
                 set_subtitle: &model.color_gamut_description(),
-                set_model: Some(&farbskala_list),
+                set_model: Some(&gamut_list),
                 #[watch]
                 set_selected: model.color_gamut_index,
                 connect_selected_notify[sender] => move |row| {
-                    sender.input(FarbskalaMsg::ChangeColorGamut(row.selected()));
+                    sender.input(ColorGamutMsg::ChangeColorGamut(row.selected()));
                 },
             },
         }
@@ -96,9 +96,9 @@ impl Component for FarbskalaModel {
         let config = AppConfig::load();
 
         let native = t!("farbskala_option_native");
-        let farbskala_list = gtk::StringList::new(&[&native, "sRGB", "DCI-P3", "Display P3"]);
+        let gamut_list = gtk::StringList::new(&[&native, "sRGB", "DCI-P3", "Display P3"]);
 
-        let model = FarbskalaModel {
+        let model = ColorGamutModel {
             color_gamut_index: config.farbskala_index,
             icm_base_path: None,
         };
@@ -109,8 +109,8 @@ impl Component for FarbskalaModel {
             shutdown
                 .register(async move {
                     match setup_icm_profiles().await {
-                        Ok(path) => out.emit(FarbskalaCommandOutput::IcmReady(path)),
-                        Err(e) => out.emit(FarbskalaCommandOutput::Fehler(e)),
+                        Ok(path) => out.emit(ColorGamutCommandOutput::IcmReady(path)),
+                        Err(e) => out.emit(ColorGamutCommandOutput::Error(e)),
                     }
                 })
                 .drop_on_shutdown()
@@ -119,9 +119,9 @@ impl Component for FarbskalaModel {
         ComponentParts { model, widgets }
     }
 
-    fn update(&mut self, msg: FarbskalaMsg, sender: ComponentSender<Self>, _root: &Self::Root) {
+    fn update(&mut self, msg: ColorGamutMsg, sender: ComponentSender<Self>, _root: &Self::Root) {
         match msg {
-            FarbskalaMsg::ChangeColorGamut(index) => {
+            ColorGamutMsg::ChangeColorGamut(index) => {
                 if index == self.color_gamut_index {
                     return;
                 }
@@ -139,12 +139,12 @@ impl Component for FarbskalaModel {
 
     fn update_cmd(
         &mut self,
-        msg: FarbskalaCommandOutput,
+        msg: ColorGamutCommandOutput,
         sender: ComponentSender<Self>,
         _root: &Self::Root,
     ) {
         match msg {
-            FarbskalaCommandOutput::IcmReady(path) => {
+            ColorGamutCommandOutput::IcmReady(path) => {
                 tracing::info!(
                     "{}",
                     t!("farbskala_icm_ready", path = path.display().to_string())
@@ -154,20 +154,20 @@ impl Component for FarbskalaModel {
                 }
                 self.icm_base_path = Some(path);
             }
-            FarbskalaCommandOutput::ProfileApplied(index) => {
+            ColorGamutCommandOutput::ProfileApplied(index) => {
                 tracing::info!(
                     "{}",
                     t!("farbskala_profile_applied", index = index.to_string())
                 );
             }
-            FarbskalaCommandOutput::Fehler(e) => {
+            ColorGamutCommandOutput::Error(e) => {
                 let _ = sender.output(e);
             }
         }
     }
 }
 
-fn apply_profile(index: u32, base: PathBuf, sender: &ComponentSender<FarbskalaModel>) {
+fn apply_profile(index: u32, base: PathBuf, sender: &ComponentSender<ColorGamutModel>) {
     sender.command(move |out, shutdown| {
         shutdown
             .register(async move {
@@ -176,8 +176,8 @@ fn apply_profile(index: u32, base: PathBuf, sender: &ComponentSender<FarbskalaMo
                     Some(filename) => apply_icm_profile(filename, &base).await,
                 };
                 match result {
-                    Ok(()) => out.emit(FarbskalaCommandOutput::ProfileApplied(index)),
-                    Err(e) => out.emit(FarbskalaCommandOutput::Fehler(e)),
+                    Ok(()) => out.emit(ColorGamutCommandOutput::ProfileApplied(index)),
+                    Err(e) => out.emit(ColorGamutCommandOutput::Error(e)),
                 }
             })
             .drop_on_shutdown()

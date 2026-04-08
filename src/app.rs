@@ -19,14 +19,14 @@ use std::process::Command;
 
 use crate::components::audio::SoundModesModel;
 use crate::components::audio::VolumeModel;
-use crate::components::display::FarbskalaModel;
+use crate::components::display::ColorGamutModel;
 use crate::components::display::OledCareModel;
 use crate::components::display::OledDimmingModel;
-use crate::components::display::ZielmodusModel;
+use crate::components::display::TargetModeModel;
 use crate::components::keyboard::AutoBeleuchtungModel;
+use crate::components::keyboard::BacklightIdleModel;
 use crate::components::keyboard::FnKeyModel;
 use crate::components::keyboard::GesturenModel;
-use crate::components::keyboard::RuhezustandModel;
 use crate::components::keyboard::TouchpadModel;
 use crate::components::system::battery::BatteryModel;
 use crate::components::system::fan::FanModel;
@@ -38,15 +38,11 @@ use relm4::prelude::*;
 use rust_i18n::t;
 use std::rc::Rc;
 
-// ---------------------------------------------------------------------------
-// App
-// ---------------------------------------------------------------------------
-
 #[derive(Debug)]
 pub enum AppMsg {
     ShowWindow,
     QuitApp,
-    Fehler(String),
+    Error(String),
     SetLanguage(String),
     ToggleAutostart(bool),
 }
@@ -59,14 +55,14 @@ pub struct AppModel {
     battery: Controller<BatteryModel>,
     fan: Controller<FanModel>,
     oled_dimming: Controller<OledDimmingModel>,
-    target_mode: Controller<ZielmodusModel>,
+    target_mode: Controller<TargetModeModel>,
     oled_care: Controller<OledCareModel>,
-    color_gamut: Controller<FarbskalaModel>,
+    color_gamut: Controller<ColorGamutModel>,
     fn_key: Controller<FnKeyModel>,
     gestures: Controller<GesturenModel>,
     touchpad: Controller<TouchpadModel>,
     auto_backlight: Controller<AutoBeleuchtungModel>,
-    backlight_idle: Controller<RuhezustandModel>,
+    backlight_idle: Controller<BacklightIdleModel>,
     sound_modes: Controller<SoundModesModel>,
     volume_widget: Controller<VolumeModel>,
 }
@@ -106,7 +102,7 @@ impl SimpleComponent for AppModel {
             AppMsg::QuitApp => {
                 relm4::main_application().quit();
             }
-            AppMsg::Fehler(text) => {
+            AppMsg::Error(text) => {
                 tracing::warn!("{} {}", t!("error_prefix"), text);
                 let toast = adw::Toast::new(&text);
                 toast.set_timeout(5);
@@ -132,7 +128,7 @@ impl SimpleComponent for AppModel {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let error_handler = |msg: String| AppMsg::Fehler(msg);
+        let error_handler = |msg: String| AppMsg::Error(msg);
         let battery = BatteryModel::builder()
             .launch(())
             .forward(sender.input_sender(), error_handler);
@@ -142,13 +138,13 @@ impl SimpleComponent for AppModel {
         let oled_dimming = OledDimmingModel::builder()
             .launch(())
             .forward(sender.input_sender(), error_handler);
-        let target_mode = ZielmodusModel::builder()
+        let target_mode = TargetModeModel::builder()
             .launch(())
             .forward(sender.input_sender(), error_handler);
         let oled_care = OledCareModel::builder()
             .launch(())
             .forward(sender.input_sender(), error_handler);
-        let color_gamut = FarbskalaModel::builder()
+        let color_gamut = ColorGamutModel::builder()
             .launch(())
             .forward(sender.input_sender(), error_handler);
         let fn_key = FnKeyModel::builder()
@@ -163,7 +159,7 @@ impl SimpleComponent for AppModel {
         let auto_backlight = AutoBeleuchtungModel::builder()
             .launch(())
             .forward(sender.input_sender(), error_handler);
-        let backlight_idle = RuhezustandModel::builder()
+        let backlight_idle = BacklightIdleModel::builder()
             .launch(())
             .forward(sender.input_sender(), error_handler);
         let sound_modes = SoundModesModel::builder()
@@ -215,7 +211,7 @@ impl SimpleComponent for AppModel {
         let sound_modes_widget = model.sound_modes.widget();
         let volume_widget = model.volume_widget.widget();
 
-        // --- Content pages ---
+        // Content pages
 
         let display_page = adw::PreferencesPage::new();
         display_page.add(oled_dimming_widget);
@@ -283,7 +279,7 @@ impl SimpleComponent for AppModel {
 
         system_page.add(&lang_group);
 
-        // --- Widget map for scroll-to-widget ---
+        // Widget map for scroll-to-widget
 
         let widget_map = std::collections::HashMap::from([
             (
@@ -323,7 +319,7 @@ impl SimpleComponent for AppModel {
             ("lang", lang_group.clone().upcast::<gtk4::Widget>()),
         ]);
 
-        // --- ViewStack for the content area ---
+        // ViewStack for the content area
 
         let content_stack = adw::ViewStack::new();
         content_stack.set_transition_duration(250);
@@ -341,7 +337,7 @@ impl SimpleComponent for AppModel {
         content_toolbar.set_content(Some(&content_stack));
         let content_nav_page = adw::NavigationPage::new(&content_toolbar, &t!("tab_display"));
 
-        // --- Sidebar ---
+        // Sidebar
 
         let sidebar_list = gtk4::ListBox::new();
         sidebar_list.add_css_class("navigation-sidebar");
@@ -383,7 +379,7 @@ impl SimpleComponent for AppModel {
             sidebar_list.select_row(Some(&first_row));
         }
 
-        // --- Search ---
+        // Search
 
         let search_widgets = crate::search::setup(
             (*sorted_nav).clone(),
@@ -408,7 +404,7 @@ impl SimpleComponent for AppModel {
         sidebar_toolbar.add_top_bar(&search_widgets.bar);
         sidebar_toolbar.set_content(Some(&sidebar_list));
 
-        // --- Bottom bar: GitHub + "Made by Guido" + version ---
+        // Bottom bar: GitHub + "Made by Guido" + version
         {
             let bottom_box = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
             bottom_box.set_margin_top(6);
@@ -453,7 +449,7 @@ impl SimpleComponent for AppModel {
 
         let sidebar_nav_page = adw::NavigationPage::new(&sidebar_toolbar, &t!("app_title"));
 
-        // --- Build widget tree ---
+        // Build widget tree
 
         let widgets = view_output!();
 

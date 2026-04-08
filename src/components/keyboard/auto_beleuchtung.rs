@@ -25,10 +25,6 @@ use tokio::sync::watch;
 use crate::services::commands::run_command_blocking;
 use crate::services::config::AppConfig;
 
-// ──────────────────────────────────────────────────────────────────────────────
-// iio-sensor-proxy D-Bus Proxy
-// ──────────────────────────────────────────────────────────────────────────────
-
 #[zbus::proxy(
     interface = "net.hadess.SensorProxy",
     default_service = "net.hadess.SensorProxy",

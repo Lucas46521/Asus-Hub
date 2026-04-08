@@ -14,13 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see https://www.gnu.org/licenses/.
 
-pub mod farbskala;
+pub mod color_gamut;
 pub(crate) mod helpers;
 pub mod oled_care;
 pub mod oled_dimming;
-pub mod zielmodus;
+pub mod target_mode;
 
-pub use farbskala::FarbskalaModel;
+pub use color_gamut::ColorGamutModel;
 pub use oled_care::OledCareModel;
 pub use oled_dimming::OledDimmingModel;
-pub use zielmodus::ZielmodusModel;
+pub use target_mode::TargetModeModel;

@@ -23,29 +23,29 @@ use super::helpers::run_qdbus;
 use crate::services::commands::{is_kde_desktop, run_command_blocking};
 use crate::services::config::AppConfig;
 
-pub struct ZielmodusModel {
+pub struct TargetModeModel {
     active: bool,
     kde_available: bool,
 }
 
 #[derive(Debug)]
-pub enum ZielmodusMsg {
+pub enum TargetModeMsg {
     SetActive(bool),
 }
 
 #[derive(Debug)]
-pub enum ZielmodusCommandOutput {
+pub enum TargetModeCommandOutput {
     ActiveRead(bool),
     ActiveSet(bool),
-    Fehler(String),
+    Error(String),
 }
 
 #[relm4::component(pub)]
-impl Component for ZielmodusModel {
+impl Component for TargetModeModel {
     type Init = ();
-    type Input = ZielmodusMsg;
+    type Input = TargetModeMsg;
     type Output = String;
-    type CommandOutput = ZielmodusCommandOutput;
+    type CommandOutput = TargetModeCommandOutput;
 
     view! {
         adw::PreferencesGroup {
@@ -75,7 +75,7 @@ impl Component for ZielmodusModel {
                 set_sensitive: model.kde_available,
 
                 connect_active_notify[sender] => move |switch| {
-                    sender.input(ZielmodusMsg::SetActive(switch.is_active()));
+                    sender.input(TargetModeMsg::SetActive(switch.is_active()));
                 },
             },
         }
@@ -89,7 +89,7 @@ impl Component for ZielmodusModel {
         let config = AppConfig::load();
         let kde_available = is_kde_desktop();
 
-        let model = ZielmodusModel {
+        let model = TargetModeModel {
             active: config.zielmodus_aktiv,
             kde_available,
         };
@@ -107,7 +107,7 @@ impl Component for ZielmodusModel {
                         .ok()
                         .flatten()
                         .unwrap_or(fallback);
-                        out.emit(ZielmodusCommandOutput::ActiveRead(active));
+                        out.emit(TargetModeCommandOutput::ActiveRead(active));
                     })
                     .drop_on_shutdown()
             });
@@ -116,9 +116,9 @@ impl Component for ZielmodusModel {
         ComponentParts { model, widgets }
     }
 
-    fn update(&mut self, msg: ZielmodusMsg, sender: ComponentSender<Self>, _root: &Self::Root) {
+    fn update(&mut self, msg: TargetModeMsg, sender: ComponentSender<Self>, _root: &Self::Root) {
         match msg {
-            ZielmodusMsg::SetActive(active) => {
+            TargetModeMsg::SetActive(active) => {
                 if active == self.active {
                     return;
                 }
@@ -129,8 +129,8 @@ impl Component for ZielmodusModel {
                     shutdown
                         .register(async move {
                             match set_kwin_effect(active).await {
-                                Ok(()) => out.emit(ZielmodusCommandOutput::ActiveSet(active)),
-                                Err(e) => out.emit(ZielmodusCommandOutput::Fehler(e)),
+                                Ok(()) => out.emit(TargetModeCommandOutput::ActiveSet(active)),
+                                Err(e) => out.emit(TargetModeCommandOutput::Error(e)),
                             }
                         })
                         .drop_on_shutdown()
@@ -141,19 +141,19 @@ impl Component for ZielmodusModel {
 
     fn update_cmd(
         &mut self,
-        msg: ZielmodusCommandOutput,
+        msg: TargetModeCommandOutput,
         sender: ComponentSender<Self>,
         _root: &Self::Root,
     ) {
         match msg {
-            ZielmodusCommandOutput::ActiveRead(active) => {
+            TargetModeCommandOutput::ActiveRead(active) => {
                 self.active = active;
                 AppConfig::update(|c| c.zielmodus_aktiv = active);
             }
-            ZielmodusCommandOutput::ActiveSet(active) => {
+            TargetModeCommandOutput::ActiveSet(active) => {
                 tracing::info!("{}", t!("zielmodus_aktiv_set", value = active.to_string()));
             }
-            ZielmodusCommandOutput::Fehler(e) => {
+            TargetModeCommandOutput::Error(e) => {
                 let _ = sender.output(e);
             }
         }

@@ -66,7 +66,7 @@ fn busctl_brightness_cmd(value: i32, battery_only: bool) -> String {
     }
 }
 
-pub struct RuhezustandModel {
+pub struct BacklightIdleModel {
     timeout_mode: TimeoutMode,
     check_never: gtk::CheckButton,
     check_battery_and_ac: gtk::CheckButton,
@@ -77,23 +77,23 @@ pub struct RuhezustandModel {
 }
 
 #[derive(Debug)]
-pub enum RuhezustandMsg {
+pub enum BacklightIdleMsg {
     ChangeMode(TimeoutMode),
     BatteryAndAcTimeChanged(u32),
     BatteryOnlyTimeChanged(u32),
 }
 
 #[derive(Debug)]
-pub enum RuhezustandCommandOutput {
-    Fehler(String),
+pub enum BacklightIdleCommandOutput {
+    Error(String),
 }
 
 #[relm4::component(pub)]
-impl Component for RuhezustandModel {
+impl Component for BacklightIdleModel {
     type Init = ();
-    type Input = RuhezustandMsg;
+    type Input = BacklightIdleMsg;
     type Output = String;
-    type CommandOutput = RuhezustandCommandOutput;
+    type CommandOutput = BacklightIdleCommandOutput;
 
     view! {
         adw::PreferencesGroup {
@@ -169,7 +169,7 @@ impl Component for RuhezustandModel {
             let sender = sender.clone();
             btn.connect_toggled(move |b| {
                 if b.is_active() {
-                    sender.input(RuhezustandMsg::ChangeMode(mode_val));
+                    sender.input(BacklightIdleMsg::ChangeMode(mode_val));
                 }
             });
         }
@@ -177,17 +177,17 @@ impl Component for RuhezustandModel {
         {
             let sender = sender.clone();
             dropdown_battery_and_ac.connect_selected_notify(move |dd| {
-                sender.input(RuhezustandMsg::BatteryAndAcTimeChanged(dd.selected()));
+                sender.input(BacklightIdleMsg::BatteryAndAcTimeChanged(dd.selected()));
             });
         }
         {
             let sender = sender.clone();
             dropdown_battery_only.connect_selected_notify(move |dd| {
-                sender.input(RuhezustandMsg::BatteryOnlyTimeChanged(dd.selected()));
+                sender.input(BacklightIdleMsg::BatteryOnlyTimeChanged(dd.selected()));
             });
         }
 
-        let mut model = RuhezustandModel {
+        let mut model = BacklightIdleModel {
             timeout_mode: mode,
             check_never,
             check_battery_and_ac,
@@ -202,20 +202,20 @@ impl Component for RuhezustandModel {
         ComponentParts { model, widgets }
     }
 
-    fn update(&mut self, msg: RuhezustandMsg, sender: ComponentSender<Self>, _root: &Self::Root) {
+    fn update(&mut self, msg: BacklightIdleMsg, sender: ComponentSender<Self>, _root: &Self::Root) {
         match msg {
-            RuhezustandMsg::ChangeMode(mode) => {
+            BacklightIdleMsg::ChangeMode(mode) => {
                 self.timeout_mode = mode;
                 AppConfig::update(|c| c.kbd_timeout_modus = mode as u32);
                 self.apply_timeout(mode, &sender);
             }
-            RuhezustandMsg::BatteryAndAcTimeChanged(index) => {
+            BacklightIdleMsg::BatteryAndAcTimeChanged(index) => {
                 AppConfig::update(|c| c.kbd_timeout_akku_netz_index = index);
                 if self.timeout_mode == TimeoutMode::BatteryAndAc {
                     self.apply_timeout(TimeoutMode::BatteryAndAc, &sender);
                 }
             }
-            RuhezustandMsg::BatteryOnlyTimeChanged(index) => {
+            BacklightIdleMsg::BatteryOnlyTimeChanged(index) => {
                 AppConfig::update(|c| c.kbd_timeout_nur_akku_index = index);
                 if self.timeout_mode == TimeoutMode::BatteryOnly {
                     self.apply_timeout(TimeoutMode::BatteryOnly, &sender);
@@ -226,24 +226,24 @@ impl Component for RuhezustandModel {
 
     fn update_cmd(
         &mut self,
-        msg: RuhezustandCommandOutput,
+        msg: BacklightIdleCommandOutput,
         sender: ComponentSender<Self>,
         _root: &Self::Root,
     ) {
         match msg {
-            RuhezustandCommandOutput::Fehler(e) => {
+            BacklightIdleCommandOutput::Error(e) => {
                 let _ = sender.output(e);
             }
         }
     }
 }
 
-impl RuhezustandModel {
+impl BacklightIdleModel {
     /// (Re)starts the `swayidle` daemon with the current timeout settings.
     ///
     /// Aborts any previously running `swayidle` task before spawning a new one.
     /// Does nothing (and kills the old task) when `mode` is [`TimeoutMode::Never`].
-    fn apply_timeout(&mut self, mode: TimeoutMode, sender: &ComponentSender<RuhezustandModel>) {
+    fn apply_timeout(&mut self, mode: TimeoutMode, sender: &ComponentSender<BacklightIdleModel>) {
         if let Some(task) = self.swayidle_task.take() {
             task.abort();
         }
@@ -285,14 +285,14 @@ impl RuhezustandModel {
             {
                 Ok(c) => c,
                 Err(e) => {
-                    cmd_sender.emit(RuhezustandCommandOutput::Fehler(
+                    cmd_sender.emit(BacklightIdleCommandOutput::Error(
                         t!("error_swayidle_start", error = e.to_string()).to_string(),
                     ));
                     return;
                 }
             };
             if let Err(e) = child.wait().await {
-                cmd_sender.emit(RuhezustandCommandOutput::Fehler(
+                cmd_sender.emit(BacklightIdleCommandOutput::Error(
                     t!("error_swayidle_wait", error = e.to_string()).to_string(),
                 ));
             }

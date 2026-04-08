@@ -44,7 +44,7 @@ struct SearchItem {
 }
 
 static SEARCH_INDEX: &[SearchItem] = &[
-    // Anzeige
+    // Display
     SearchItem {
         title_key: "oled_dimming_group_title",
         page_icon: "monitor-symbolic",
@@ -101,7 +101,7 @@ static SEARCH_INDEX: &[SearchItem] = &[
         page_name: "display",
         component_key: "color_gamut",
     },
-    // Maus & Tastatur
+    // Keyboard
     SearchItem {
         title_key: "backlight_auto_on_title",
         page_icon: "input-keyboard-symbolic",
@@ -144,6 +144,7 @@ static SEARCH_INDEX: &[SearchItem] = &[
         page_name: "keyboard",
         component_key: "fn_key",
     },
+    // Touchpad
     SearchItem {
         title_key: "gestures_group_title",
         page_icon: "input-touchpad-symbolic",
@@ -259,7 +260,7 @@ pub fn setup(
     let widget_map = Rc::new(widget_map);
     let sorted_items = Rc::new(sorted_items);
 
-    // --- Suchergebnisse-Liste ---
+    // Search results
     let search_results_list = gtk4::ListBox::new();
     search_results_list.add_css_class("boxed-list");
     search_results_list.set_selection_mode(gtk4::SelectionMode::None);
@@ -272,7 +273,7 @@ pub fn setup(
     search_scroll.set_child(Some(&search_results_list));
     search_scroll.set_vexpand(true);
 
-    // --- Suchleiste ---
+    // Searchbar
     let search_entry = gtk4::SearchEntry::new();
     search_entry.set_placeholder_text(Some(&t!("search_placeholder")));
     search_entry.set_hexpand(true);
@@ -284,13 +285,13 @@ pub fn setup(
     let search_toggle = gtk4::ToggleButton::new();
     search_toggle.set_icon_name("system-search-symbolic");
 
-    // Toggle-Schaltfläche ↔ SearchBar
+    // Toggle bar
     let search_bar_t = search_bar.clone();
     search_toggle.connect_toggled(move |btn| {
         search_bar_t.set_search_mode(btn.is_active());
     });
 
-    // SearchBar-Modus → Stack-Seite + Header-Titel wechseln
+    // Switch to Stack Page + Header Title
     let search_toggle_n = search_toggle.clone();
     let content_stack_n = content_stack.clone();
     let nav_page_n = content_nav_page.clone();
@@ -315,7 +316,7 @@ pub fn setup(
         }
     });
 
-    // Sucheingabe → Ergebnisse filtern
+    // Filter results
     let results_list_c = search_results_list.clone();
     let search_bar_c = search_bar.clone();
     let sidebar_list_c = sidebar_list.clone();
