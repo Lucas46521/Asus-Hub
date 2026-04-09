@@ -153,6 +153,7 @@ Other Linux distributions should work as long as the relevant dependencies can b
 
 ### 1. Prerequisites
 
+**Note:** If you plan to use the AppImage (see Step 5), you can skip this step entirely. The AppImage already bundles all the necessary UI dependencies.
 - Rust toolchain (install via [rustup](https://rustup.rs))
 - GTK4 and Libadwaita development libraries
 
