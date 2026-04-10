@@ -42,7 +42,7 @@ pub enum OledCareCommandOutput {
     PanelSet(bool),
     TransparencySet(bool),
     PixelRefreshSet(bool),
-    Fehler(String),
+    Error(String),
 }
 
 #[relm4::component(pub)]
@@ -152,7 +152,7 @@ impl Component for OledCareModel {
                             .await
                             {
                                 Ok(()) => out.emit(OledCareCommandOutput::PixelRefreshSet(active)),
-                                Err(e) => out.emit(OledCareCommandOutput::Fehler(e)),
+                                Err(e) => out.emit(OledCareCommandOutput::Error(e)),
                             }
                         })
                         .drop_on_shutdown()
@@ -226,7 +226,7 @@ impl Component for OledCareModel {
                 let value = if active { "300s" } else { "600s" };
                 tracing::info!("{}", t!("oled_care_dpms_set", value = value));
             }
-            OledCareCommandOutput::Fehler(e) => {
+            OledCareCommandOutput::Error(e) => {
                 let _ = sender.output(e);
             }
         }
@@ -246,6 +246,6 @@ async fn plasmashell_evaluate(
     ];
     match run_qdbus(args).await {
         Ok(()) => out.emit(success_output),
-        Err(e) => out.emit(OledCareCommandOutput::Fehler(e)),
+        Err(e) => out.emit(OledCareCommandOutput::Error(e)),
     }
 }

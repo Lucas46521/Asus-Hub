@@ -47,7 +47,7 @@ pub enum OledDimmingMsg {
 #[derive(Debug)]
 pub enum OledDimmingCommandOutput {
     Set(u32),
-    Fehler(String),
+    Error(String),
     BrightnessChanged,
 }
 
@@ -116,7 +116,7 @@ impl Component for OledDimmingModel {
                     .register(async move {
                         match apply_dimming(brightness).await {
                             Ok(()) => out.emit(OledDimmingCommandOutput::Set(brightness)),
-                            Err(e) => out.emit(OledDimmingCommandOutput::Fehler(e)),
+                            Err(e) => out.emit(OledDimmingCommandOutput::Error(e)),
                         }
                     })
                     .drop_on_shutdown()
@@ -143,7 +143,7 @@ impl Component for OledDimmingModel {
                         .register(async move {
                             match apply_dimming(value).await {
                                 Ok(()) => out.emit(OledDimmingCommandOutput::Set(value)),
-                                Err(e) => out.emit(OledDimmingCommandOutput::Fehler(e)),
+                                Err(e) => out.emit(OledDimmingCommandOutput::Error(e)),
                             }
                         })
                         .drop_on_shutdown()
@@ -162,7 +162,7 @@ impl Component for OledDimmingModel {
             OledDimmingCommandOutput::Set(value) => {
                 tracing::info!("{}", t!("oled_dimming_set", value = value.to_string()));
             }
-            OledDimmingCommandOutput::Fehler(e) => {
+            OledDimmingCommandOutput::Error(e) => {
                 let _ = sender.output(e);
             }
             OledDimmingCommandOutput::BrightnessChanged => {
@@ -174,7 +174,7 @@ impl Component for OledDimmingModel {
                                 tokio::time::sleep(std::time::Duration::from_millis(500)).await;
                                 match apply_dimming(value).await {
                                     Ok(()) => out.emit(OledDimmingCommandOutput::Set(value)),
-                                    Err(e) => out.emit(OledDimmingCommandOutput::Fehler(e)),
+                                    Err(e) => out.emit(OledDimmingCommandOutput::Error(e)),
                                 }
                             })
                             .drop_on_shutdown()

@@ -38,7 +38,7 @@ pub enum FnKeyMsg {
 #[derive(Debug)]
 pub enum FnKeyCommandOutput {
     Set(bool),
-    Fehler(String),
+    Error(String),
 }
 
 #[relm4::component(pub)]
@@ -151,7 +151,7 @@ impl Component for FnKeyModel {
 
                             match result {
                                 Ok(()) => out.emit(FnKeyCommandOutput::Set(locked)),
-                                Err(e) => out.emit(FnKeyCommandOutput::Fehler(e)),
+                                Err(e) => out.emit(FnKeyCommandOutput::Error(e)),
                             }
                         })
                         .drop_on_shutdown()
@@ -176,7 +176,7 @@ impl Component for FnKeyModel {
                 };
                 self.row_hint.set_subtitle(&t!("fn_key_saved", mode = mode));
             }
-            FnKeyCommandOutput::Fehler(e) => {
+            FnKeyCommandOutput::Error(e) => {
                 self.row_hint
                     .set_subtitle(&t!("fn_key_save_error", error = e.clone()));
                 let _ = sender.output(e);

@@ -53,7 +53,7 @@ pub enum GpuCommandOutput {
     /// Confirmation that `SetMode` succeeded; carries the daemon-confirmed new mode.
     ModeSet(GfxMode),
     /// An error message to forward as a toast notification.
-    Fehler(String),
+    Error(String),
 }
 
 #[relm4::component(pub)]
@@ -146,14 +146,14 @@ impl Component for GpuModel {
                     let current = match dbus::get_gpu_mode().await {
                         Ok(m) => m,
                         Err(e) => {
-                            out.emit(GpuCommandOutput::Fehler(e));
+                            out.emit(GpuCommandOutput::Error(e));
                             return;
                         }
                     };
                     let supported = match dbus::get_supported_gpu_modes().await {
                         Ok(v) => v,
                         Err(e) => {
-                            out.emit(GpuCommandOutput::Fehler(e));
+                            out.emit(GpuCommandOutput::Error(e));
                             return;
                         }
                     };
@@ -182,7 +182,7 @@ impl Component for GpuModel {
                         .register(async move {
                             match dbus::set_gpu_mode(mode).await {
                                 Ok(m) => out.emit(GpuCommandOutput::ModeSet(m)),
-                                Err(e) => out.emit(GpuCommandOutput::Fehler(e)),
+                                Err(e) => out.emit(GpuCommandOutput::Error(e)),
                             }
                         })
                         .drop_on_shutdown()
@@ -212,8 +212,7 @@ impl Component for GpuModel {
                 self.display_modes = modes;
                 self.current_mode = current;
 
-                let labels: Vec<&str> = self.display_modes.iter().map(|m| m.i18n_key()).collect();
-                let translated: Vec<String> = labels.iter().map(|k| t!(*k).to_string()).collect();
+                let translated: Vec<String> = self.display_modes.iter().map(|m| t!(m.i18n_key()).to_string()).collect();
                 let str_refs: Vec<&str> = translated.iter().map(|s| s.as_str()).collect();
                 self.combo_row.set_model(Some(&gtk::StringList::new(&str_refs)));
 
@@ -230,7 +229,7 @@ impl Component for GpuModel {
                     t!("gpu_mode_set", mode = t!(mode.i18n_key()).to_string())
                 );
             }
-            GpuCommandOutput::Fehler(e) => {
+            GpuCommandOutput::Error(e) => {
                 let _ = sender.output(e);
             }
         }

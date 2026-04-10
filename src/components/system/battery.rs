@@ -57,7 +57,7 @@ pub enum BatteryCommandOutput {
     /// Confirmation that the charge limit was successfully written.
     ChargeLimitSet(u8),
     /// An error message to forward as a toast notification.
-    Fehler(String),
+    Error(String),
     /// Fired after the 24-hour full-charge timer expires, triggering a revert to 80%.
     TimerElapsed,
     /// Charge limit value read from `asusd` during initialisation.
@@ -163,7 +163,7 @@ impl Component for BatteryModel {
 
                     match dbus::get_charge_limit().await {
                         Ok(val) => out.emit(BatteryCommandOutput::InitValue(val)),
-                        Err(e) => out.emit(BatteryCommandOutput::Fehler(e)),
+                        Err(e) => out.emit(BatteryCommandOutput::Error(e)),
                     }
                 })
                 .drop_on_shutdown()
@@ -178,7 +178,7 @@ impl Component for BatteryModel {
                             out.emit(BatteryCommandOutput::InitDeepSleep(active));
                         }
                         Err(e) => {
-                            out.emit(BatteryCommandOutput::Fehler(
+                            out.emit(BatteryCommandOutput::Error(
                                 t!("error_mem_sleep_read", error = e.to_string()).to_string(),
                             ));
                         }
@@ -233,7 +233,7 @@ impl Component for BatteryModel {
                             let cmd = format!("echo {value} > /sys/power/mem_sleep");
                             match pkexec_shell(&cmd).await {
                                 Ok(()) => out.emit(BatteryCommandOutput::DeepSleepSet(active)),
-                                Err(e) => out.emit(BatteryCommandOutput::Fehler(e)),
+                                Err(e) => out.emit(BatteryCommandOutput::Error(e)),
                             }
                         })
                         .drop_on_shutdown()
@@ -291,7 +291,7 @@ impl Component for BatteryModel {
                 self.asusd_available = available;
             }
             BatteryCommandOutput::InitValue(val) => {
-                self.maintenance_mode_active = val <= 80;
+                self.maintenance_mode_active = val != 100;
                 self.full_charge_active = false;
             }
             BatteryCommandOutput::InitDeepSleep(active) => {
@@ -307,7 +307,7 @@ impl Component for BatteryModel {
                     t!("battery_charge_limit_set", value = val.to_string())
                 );
             }
-            BatteryCommandOutput::Fehler(e) => {
+            BatteryCommandOutput::Error(e) => {
                 let _ = sender.output(e);
             }
             BatteryCommandOutput::TimerElapsed => {
@@ -326,10 +326,10 @@ impl Component for BatteryModel {
 }
 
 /// Calls [`dbus::set_charge_limit`] and emits either [`BatteryCommandOutput::ChargeLimitSet`]
-/// or [`BatteryCommandOutput::Fehler`] depending on the outcome.
+/// or [`BatteryCommandOutput::Error`] depending on the outcome.
 async fn emit_limit_result(out: &relm4::Sender<BatteryCommandOutput>, value: u8) {
     match dbus::set_charge_limit(value).await {
         Ok(val) => out.emit(BatteryCommandOutput::ChargeLimitSet(val)),
-        Err(e) => out.emit(BatteryCommandOutput::Fehler(e)),
+        Err(e) => out.emit(BatteryCommandOutput::Error(e)),
     }
 }

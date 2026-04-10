@@ -67,7 +67,7 @@ pub enum AudioCommandOutput {
     PresetsInstalled,
     ProfileSet(u32),
     CustomPresetLoaded(String),
-    Fehler(String),
+    Error(String),
 }
 
 #[relm4::component(pub)]
@@ -163,7 +163,7 @@ impl Component for SoundModesModel {
                 .register(async move {
                     match install_presets().await {
                         Ok(()) => out.emit(AudioCommandOutput::PresetsInstalled),
-                        Err(e) => out.emit(AudioCommandOutput::Fehler(
+                        Err(e) => out.emit(AudioCommandOutput::Error(
                             t!("audio_preset_install_error", error = e).to_string(),
                         )),
                     }
@@ -222,7 +222,7 @@ impl Component for SoundModesModel {
                     shutdown
                         .register(async move {
                             if let Err(e) = set_easyeffects_profile(idx, None).await {
-                                out.emit(AudioCommandOutput::Fehler(e));
+                                out.emit(AudioCommandOutput::Error(e));
                                 return;
                             }
                             out.emit(AudioCommandOutput::ProfileSet(idx));
@@ -246,7 +246,7 @@ impl Component for SoundModesModel {
                         .register(async move {
                             match load_custom_preset(path).await {
                                 Ok(n) => out.emit(AudioCommandOutput::CustomPresetLoaded(n)),
-                                Err(e) => out.emit(AudioCommandOutput::Fehler(e)),
+                                Err(e) => out.emit(AudioCommandOutput::Error(e)),
                             }
                         })
                         .drop_on_shutdown()
@@ -278,7 +278,7 @@ impl Component for SoundModesModel {
             AudioCommandOutput::CustomPresetLoaded(name) => {
                 tracing::info!("{}", t!("audio_profile_set", profile = name));
             }
-            AudioCommandOutput::Fehler(e) => {
+            AudioCommandOutput::Error(e) => {
                 let _ = sender.output(e);
             }
         }

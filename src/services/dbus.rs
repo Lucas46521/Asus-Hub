@@ -64,13 +64,18 @@ impl From<u32> for FanProfile {
 static PLATFORM_PROXY: tokio::sync::OnceCell<PlatformProxy<'static>> =
     tokio::sync::OnceCell::const_new();
 
+/// Opens a system D-Bus connection, mapping errors to localised strings.
+async fn system_bus_connection() -> Result<zbus::Connection, String> {
+    zbus::Connection::system()
+        .await
+        .map_err(|e| t!("error_dbus_connect", error = e.to_string()).to_string())
+}
+
 /// Returns a reference to the shared [`PlatformProxy`], initialising it on first call.
 async fn platform_proxy() -> Result<&'static PlatformProxy<'static>, String> {
     PLATFORM_PROXY
         .get_or_try_init(|| async {
-            let conn = zbus::Connection::system()
-                .await
-                .map_err(|e| t!("error_dbus_connect", error = e.to_string()).to_string())?;
+            let conn = system_bus_connection().await?;
             PlatformProxy::new(&conn)
                 .await
                 .map_err(|e| t!("error_dbus_proxy_create", error = e.to_string()).to_string())
@@ -201,9 +206,7 @@ static SUPERGFX_PROXY: tokio::sync::OnceCell<SuperGfxProxy<'static>> =
 async fn supergfx_proxy() -> Result<&'static SuperGfxProxy<'static>, String> {
     SUPERGFX_PROXY
         .get_or_try_init(|| async {
-            let conn = zbus::Connection::system()
-                .await
-                .map_err(|e| t!("error_dbus_connect", error = e.to_string()).to_string())?;
+            let conn = system_bus_connection().await?;
             SuperGfxProxy::new(&conn)
                 .await
                 .map_err(|e| t!("error_dbus_proxy_create", error = e.to_string()).to_string())

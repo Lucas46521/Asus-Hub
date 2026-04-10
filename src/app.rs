@@ -23,10 +23,10 @@ use crate::components::display::ColorGamutModel;
 use crate::components::display::OledCareModel;
 use crate::components::display::OledDimmingModel;
 use crate::components::display::TargetModeModel;
-use crate::components::keyboard::AutoBeleuchtungModel;
+use crate::components::keyboard::AutoBacklightModel;
 use crate::components::keyboard::BacklightIdleModel;
 use crate::components::keyboard::FnKeyModel;
-use crate::components::keyboard::GesturenModel;
+use crate::components::keyboard::GesturesModel;
 use crate::components::keyboard::TouchpadModel;
 use crate::components::system::battery::BatteryModel;
 use crate::components::system::fan::FanModel;
@@ -61,9 +61,9 @@ pub struct AppModel {
     oled_care: Controller<OledCareModel>,
     color_gamut: Controller<ColorGamutModel>,
     fn_key: Controller<FnKeyModel>,
-    gestures: Controller<GesturenModel>,
+    gestures: Controller<GesturesModel>,
     touchpad: Controller<TouchpadModel>,
-    auto_backlight: Controller<AutoBeleuchtungModel>,
+    auto_backlight: Controller<AutoBacklightModel>,
     backlight_idle: Controller<BacklightIdleModel>,
     sound_modes: Controller<SoundModesModel>,
     volume_widget: Controller<VolumeModel>,
@@ -155,13 +155,13 @@ impl SimpleComponent for AppModel {
         let fn_key = FnKeyModel::builder()
             .launch(())
             .forward(sender.input_sender(), error_handler);
-        let gestures = GesturenModel::builder()
+        let gestures = GesturesModel::builder()
             .launch(())
             .forward(sender.input_sender(), error_handler);
         let touchpad = TouchpadModel::builder()
             .launch(())
             .forward(sender.input_sender(), error_handler);
-        let auto_backlight = AutoBeleuchtungModel::builder()
+        let auto_backlight = AutoBacklightModel::builder()
             .launch(())
             .forward(sender.input_sender(), error_handler);
         let backlight_idle = BacklightIdleModel::builder()

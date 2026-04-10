@@ -48,7 +48,7 @@ pub enum TouchpadMsg {
 #[derive(Debug)]
 pub enum TouchpadCommandOutput {
     /// An error message to forward as a toast notification.
-    Fehler(String),
+    Error(String),
     /// Fired every second to decrement the on-screen countdown.
     CountdownTick,
     /// Fired when the 10-second confirmation window expires without user action,
@@ -154,7 +154,7 @@ impl Component for TouchpadModel {
                     shutdown
                         .register(async move {
                             if let Err(e) = run_touchpad_command(active).await {
-                                out.emit(TouchpadCommandOutput::Fehler(e));
+                                out.emit(TouchpadCommandOutput::Error(e));
                             }
                         })
                         .drop_on_shutdown()
@@ -193,13 +193,13 @@ impl Component for TouchpadModel {
                     shutdown
                         .register(async move {
                             if let Err(e) = run_touchpad_command(true).await {
-                                out.emit(TouchpadCommandOutput::Fehler(e));
+                                out.emit(TouchpadCommandOutput::Error(e));
                             }
                         })
                         .drop_on_shutdown()
                 });
             }
-            TouchpadCommandOutput::Fehler(e) => {
+            TouchpadCommandOutput::Error(e) => {
                 let _ = sender.output(e);
             }
         }

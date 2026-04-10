@@ -253,7 +253,7 @@ impl BacklightIdleModel {
         }
 
         let seconds = match mode {
-            TimeoutMode::Never => unreachable!(),
+            TimeoutMode::Never => unreachable!("TimeoutMode::Never is handled by the early return above"),
             TimeoutMode::BatteryAndAc => {
                 let idx = self.dropdown_battery_and_ac.selected() as usize;
                 *TIMEOUT_SECONDS.get(idx).unwrap_or(&60)

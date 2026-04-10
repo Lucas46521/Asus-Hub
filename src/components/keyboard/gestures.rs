@@ -25,22 +25,22 @@ use tokio::sync::watch;
 use crate::services::config::AppConfig;
 use crate::services::edge_gestures;
 
-pub struct GesturenModel {
+pub struct GesturesModel {
     active: bool,
     loop_tx: Option<watch::Sender<bool>>,
 }
 
 #[derive(Debug)]
-pub enum GesturenMsg {
+pub enum GesturesMsg {
     ToggleGestures(bool),
 }
 
 const GESTURE_IMG: &[u8] = include_bytes!("../../../assets/img/gesture.png");
 
 #[relm4::component(pub)]
-impl Component for GesturenModel {
+impl Component for GesturesModel {
     type Init = ();
-    type Input = GesturenMsg;
+    type Input = GesturesMsg;
     type Output = String;
     type CommandOutput = ();
 
@@ -71,7 +71,7 @@ impl Component for GesturenModel {
                         set_active: model.active,
 
                         connect_active_notify[sender] => move |s| {
-                            sender.input(GesturenMsg::ToggleGestures(s.is_active()));
+                            sender.input(GesturesMsg::ToggleGestures(s.is_active()));
                         },
                     },
 
@@ -105,7 +105,7 @@ impl Component for GesturenModel {
         } else {
             None
         };
-        let model = GesturenModel { active, loop_tx };
+        let model = GesturesModel { active, loop_tx };
         let widgets = view_output!();
 
         let bytes = glib::Bytes::from_static(GESTURE_IMG);
@@ -116,9 +116,9 @@ impl Component for GesturenModel {
         ComponentParts { model, widgets }
     }
 
-    fn update(&mut self, msg: GesturenMsg, _sender: ComponentSender<Self>, _root: &Self::Root) {
+    fn update(&mut self, msg: GesturesMsg, _sender: ComponentSender<Self>, _root: &Self::Root) {
         match msg {
-            GesturenMsg::ToggleGestures(active) => {
+            GesturesMsg::ToggleGestures(active) => {
                 if active == self.active {
                     return;
                 }

@@ -50,7 +50,7 @@ pub enum FanCommandOutput {
     /// Confirmation that the profile was successfully applied.
     ProfileSet(FanProfile),
     /// An error message to forward as a toast notification.
-    Fehler(String),
+    Error(String),
 }
 
 #[relm4::component(pub)]
@@ -166,9 +166,9 @@ impl Component for FanModel {
                         }
                         Ok(_) => match dbus::set_fan_profile(saved_profile).await {
                             Ok(p) => out.emit(FanCommandOutput::ProfileSet(p)),
-                            Err(e) => out.emit(FanCommandOutput::Fehler(e)),
+                            Err(e) => out.emit(FanCommandOutput::Error(e)),
                         },
-                        Err(e) => out.emit(FanCommandOutput::Fehler(e)),
+                        Err(e) => out.emit(FanCommandOutput::Error(e)),
                     }
                 })
                 .drop_on_shutdown()
@@ -191,7 +191,7 @@ impl Component for FanModel {
                         .register(async move {
                             match dbus::set_fan_profile(profile).await {
                                 Ok(p) => out.emit(FanCommandOutput::ProfileSet(p)),
-                                Err(e) => out.emit(FanCommandOutput::Fehler(e)),
+                                Err(e) => out.emit(FanCommandOutput::Error(e)),
                             }
                         })
                         .drop_on_shutdown()
@@ -211,12 +211,14 @@ impl Component for FanModel {
                 self.asusd_available = available;
             }
             FanCommandOutput::ProfileSet(profile) => {
-                tracing::info!(
-                    "{}",
-                    t!("fan_profile_set", profile = format!("{:?}", profile))
-                );
+                let name = match profile {
+                    FanProfile::Balanced => "Balanced",
+                    FanProfile::Performance => "Performance",
+                    FanProfile::Quiet => "Quiet",
+                };
+                tracing::info!("{}", t!("fan_profile_set", profile = name));
             }
-            FanCommandOutput::Fehler(e) => {
+            FanCommandOutput::Error(e) => {
                 let _ = sender.output(e);
             }
         }

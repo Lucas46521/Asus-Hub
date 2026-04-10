@@ -40,7 +40,7 @@ trait SensorProxy {
 }
 
 /// State for the ambient-light-based keyboard backlight automation component.
-pub struct AutoBeleuchtungModel {
+pub struct AutoBacklightModel {
     /// Whether the `iio-sensor-proxy` D-Bus service is reachable.
     sensor_available: bool,
     /// When `true`, the keyboard backlight is raised to max when lux drops below `brighten_threshold`.
@@ -58,7 +58,7 @@ pub struct AutoBeleuchtungModel {
 }
 
 #[derive(Debug)]
-pub enum AutoBeleuchtungMsg {
+pub enum AutoBacklightMsg {
     ToggleAutoBrighten(bool),
     ToggleAutoDim(bool),
     BrightenThresholdChanged(f64),
@@ -66,18 +66,18 @@ pub enum AutoBeleuchtungMsg {
 }
 
 #[derive(Debug)]
-pub enum AutoBeleuchtungCommandOutput {
+pub enum AutoBacklightCommandOutput {
     SensorChecked(bool),
-    Fehler(String),
+    Error(String),
     LuxUpdated(f64),
 }
 
 #[relm4::component(pub)]
-impl Component for AutoBeleuchtungModel {
+impl Component for AutoBacklightModel {
     type Init = ();
-    type Input = AutoBeleuchtungMsg;
+    type Input = AutoBacklightMsg;
     type Output = String;
-    type CommandOutput = AutoBeleuchtungCommandOutput;
+    type CommandOutput = AutoBacklightCommandOutput;
 
     view! {
         adw::PreferencesGroup {
@@ -125,7 +125,7 @@ impl Component for AutoBeleuchtungModel {
                 set_active: model.auto_brighten,
 
                 connect_active_notify[sender] => move |switch| {
-                    sender.input(AutoBeleuchtungMsg::ToggleAutoBrighten(switch.is_active()));
+                    sender.input(AutoBacklightMsg::ToggleAutoBrighten(switch.is_active()));
                 },
             },
 
@@ -143,7 +143,7 @@ impl Component for AutoBeleuchtungModel {
                     set_value: model.brighten_threshold,
 
                     connect_value_changed[sender] => move |spin| {
-                        sender.input(AutoBeleuchtungMsg::BrightenThresholdChanged(spin.value()));
+                        sender.input(AutoBacklightMsg::BrightenThresholdChanged(spin.value()));
                     },
                 },
             },
@@ -158,7 +158,7 @@ impl Component for AutoBeleuchtungModel {
                 set_active: model.auto_dim,
 
                 connect_active_notify[sender] => move |switch| {
-                    sender.input(AutoBeleuchtungMsg::ToggleAutoDim(switch.is_active()));
+                    sender.input(AutoBacklightMsg::ToggleAutoDim(switch.is_active()));
                 },
             },
 
@@ -176,7 +176,7 @@ impl Component for AutoBeleuchtungModel {
                     set_value: model.dim_threshold,
 
                     connect_value_changed[sender] => move |spin| {
-                        sender.input(AutoBeleuchtungMsg::DimThresholdChanged(spin.value()));
+                        sender.input(AutoBacklightMsg::DimThresholdChanged(spin.value()));
                     },
                 },
             },
@@ -190,7 +190,7 @@ impl Component for AutoBeleuchtungModel {
     ) -> ComponentParts<Self> {
         let config = AppConfig::load();
 
-        let model = AutoBeleuchtungModel {
+        let model = AutoBacklightModel {
             sensor_available: false,
             auto_brighten: config.kbd_brighten_active,
             auto_dim: config.kbd_dim_active,
@@ -206,7 +206,7 @@ impl Component for AutoBeleuchtungModel {
             shutdown
                 .register(async move {
                     let available = is_sensor_available().await;
-                    out.emit(AutoBeleuchtungCommandOutput::SensorChecked(available));
+                    out.emit(AutoBacklightCommandOutput::SensorChecked(available));
                 })
                 .drop_on_shutdown()
         });
@@ -214,31 +214,26 @@ impl Component for AutoBeleuchtungModel {
         ComponentParts { model, widgets }
     }
 
-    fn update(
-        &mut self,
-        msg: AutoBeleuchtungMsg,
-        sender: ComponentSender<Self>,
-        _root: &Self::Root,
-    ) {
+    fn update(&mut self, msg: AutoBacklightMsg, sender: ComponentSender<Self>, _root: &Self::Root) {
         match msg {
-            AutoBeleuchtungMsg::ToggleAutoBrighten(active) => {
+            AutoBacklightMsg::ToggleAutoBrighten(active) => {
                 self.auto_brighten = active;
                 AppConfig::update(|c| c.kbd_brighten_active = active);
                 self.update_sensor_loop(sender);
             }
-            AutoBeleuchtungMsg::ToggleAutoDim(active) => {
+            AutoBacklightMsg::ToggleAutoDim(active) => {
                 self.auto_dim = active;
                 AppConfig::update(|c| c.kbd_dim_active = active);
                 self.update_sensor_loop(sender);
             }
-            AutoBeleuchtungMsg::BrightenThresholdChanged(value) => {
+            AutoBacklightMsg::BrightenThresholdChanged(value) => {
                 if (value - self.brighten_threshold).abs() > f64::EPSILON {
                     self.brighten_threshold = value;
                     AppConfig::update(|c| c.kbd_brighten_threshold = value);
                     self.update_sensor_loop(sender);
                 }
             }
-            AutoBeleuchtungMsg::DimThresholdChanged(value) => {
+            AutoBacklightMsg::DimThresholdChanged(value) => {
                 if (value - self.dim_threshold).abs() > f64::EPSILON {
                     self.dim_threshold = value;
                     AppConfig::update(|c| c.kbd_dim_threshold = value);
@@ -250,12 +245,12 @@ impl Component for AutoBeleuchtungModel {
 
     fn update_cmd(
         &mut self,
-        msg: AutoBeleuchtungCommandOutput,
+        msg: AutoBacklightCommandOutput,
         sender: ComponentSender<Self>,
         _root: &Self::Root,
     ) {
         match msg {
-            AutoBeleuchtungCommandOutput::SensorChecked(available) => {
+            AutoBacklightCommandOutput::SensorChecked(available) => {
                 self.sensor_available = available;
                 if available && (self.auto_brighten || self.auto_dim) {
                     self.loop_tx = Some(start_sensor_loop(
@@ -267,17 +262,17 @@ impl Component for AutoBeleuchtungModel {
                     ));
                 }
             }
-            AutoBeleuchtungCommandOutput::Fehler(e) => {
+            AutoBacklightCommandOutput::Error(e) => {
                 let _ = sender.output(e);
             }
-            AutoBeleuchtungCommandOutput::LuxUpdated(lux) => {
+            AutoBacklightCommandOutput::LuxUpdated(lux) => {
                 self.current_lux = Some(lux);
             }
         }
     }
 }
 
-impl AutoBeleuchtungModel {
+impl AutoBacklightModel {
     fn update_sensor_loop(&mut self, sender: ComponentSender<Self>) {
         let active = self.auto_brighten || self.auto_dim;
 
@@ -369,7 +364,7 @@ fn start_sensor_loop(
     brighten_threshold: f64,
     auto_dim: bool,
     dim_threshold: f64,
-    sender: &ComponentSender<AutoBeleuchtungModel>,
+    sender: &ComponentSender<AutoBacklightModel>,
 ) -> watch::Sender<bool> {
     let (tx, mut rx) = watch::channel(true);
     let out = sender.command_sender().clone();
@@ -378,7 +373,7 @@ fn start_sensor_loop(
         let conn = match zbus::Connection::system().await {
             Ok(c) => c,
             Err(e) => {
-                out.emit(AutoBeleuchtungCommandOutput::Fehler(
+                out.emit(AutoBacklightCommandOutput::Error(
                     t!("error_dbus_connection", error = e.to_string()).to_string(),
                 ));
                 return;
@@ -388,7 +383,7 @@ fn start_sensor_loop(
         let proxy = match SensorProxyProxy::new(&conn).await {
             Ok(p) => p,
             Err(e) => {
-                out.emit(AutoBeleuchtungCommandOutput::Fehler(
+                out.emit(AutoBacklightCommandOutput::Error(
                     t!("error_sensor_proxy", error = e.to_string()).to_string(),
                 ));
                 return;
@@ -396,7 +391,7 @@ fn start_sensor_loop(
         };
 
         if let Err(e) = proxy.claim_light().await {
-            out.emit(AutoBeleuchtungCommandOutput::Fehler(
+            out.emit(AutoBacklightCommandOutput::Error(
                 t!("error_claim_light", error = e.to_string()).to_string(),
             ));
             return;
@@ -418,7 +413,7 @@ fn start_sensor_loop(
                     current_brightness,
                 )
                 .await;
-                out.emit(AutoBeleuchtungCommandOutput::LuxUpdated(level));
+                out.emit(AutoBacklightCommandOutput::LuxUpdated(level));
             }
             Err(e) => tracing::warn!(
                 "{}",
@@ -452,7 +447,7 @@ fn start_sensor_loop(
                                     current_brightness,
                                 )
                                 .await;
-                                out.emit(AutoBeleuchtungCommandOutput::LuxUpdated(level));
+                                out.emit(AutoBacklightCommandOutput::LuxUpdated(level));
                             }
                             Err(e) => tracing::warn!(
                                 "{}",
