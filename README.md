@@ -100,6 +100,7 @@ The application is smart about availability: if a required tool or desktop envir
 | Deep Sleep | Switch between `s2idle` and `deep` suspend modes | - |
 | Fan Profiles | Switch between Performance, Balanced, and Quiet fan curves | `asusd` |
 | GPU Mode | Switch between GPU modes: Hybrid, Integrated, Nvidia (No Modeset), VFIO, ASUS eGPU, and ASUS MUX Discrete. Switching GPU modes requires a full system reboot. | `supergfxctl` |
+| GPU Memory Allocation | Reserve system RAM for the integrated GPU (UMA Frame Buffer). Options: Auto, 1–8 GB. Requires a supported BIOS. Changes require a full system reboot. | `asusd` |
 
 ### General
 
