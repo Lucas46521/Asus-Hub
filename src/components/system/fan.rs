@@ -124,7 +124,7 @@ impl Component for FanModel {
         match saved_profile {
             FanProfile::Performance => check_performance.set_active(true),
             FanProfile::Balanced => check_balanced.set_active(true),
-            FanProfile::Quiet => check_quiet.set_active(true),
+            FanProfile::Quiet | FanProfile::LowPower => check_quiet.set_active(true),
         }
 
         for (btn, profile) in [
@@ -215,6 +215,7 @@ impl Component for FanModel {
                     FanProfile::Balanced => "Balanced",
                     FanProfile::Performance => "Performance",
                     FanProfile::Quiet => "Quiet",
+                    FanProfile::LowPower => "LowPower",
                 };
                 tracing::info!("{}", t!("fan_profile_set", profile = name));
             }

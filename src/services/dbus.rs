@@ -45,6 +45,8 @@ pub enum FanProfile {
     Performance = 1,
     /// Reduced fan noise and power draw (value `2`).
     Quiet = 2,
+    /// Low-power mode used on TUF laptops in place of Quiet (value `3`).
+    LowPower = 3,
 }
 
 impl From<u32> for FanProfile {
@@ -52,6 +54,7 @@ impl From<u32> for FanProfile {
         match value {
             1 => Self::Performance,
             2 => Self::Quiet,
+            3 => Self::LowPower,
             _ => Self::Balanced,
         }
     }
@@ -131,13 +134,24 @@ pub async fn get_fan_profile() -> Result<FanProfile, String> {
 }
 
 /// Applies a fan/platform profile via `asusd` and returns the applied profile on success.
+///
+/// If the requested profile is [`FanProfile::Quiet`] and the daemon returns a
+/// `NotSupported` error (e.g. on TUF laptops that only expose `low-power`),
+/// the function automatically retries with [`FanProfile::LowPower`] and returns
+/// that variant on success.
 pub async fn set_fan_profile(profile: FanProfile) -> Result<FanProfile, String> {
     let proxy = platform_proxy().await?;
-    proxy
-        .set_platform_profile(profile as u32)
-        .await
-        .map_err(|e| t!("error_fan_profile_write", error = e.to_string()).to_string())?;
-    Ok(profile)
+    match proxy.set_platform_profile(profile as u32).await {
+        Ok(_) => Ok(profile),
+        Err(e) if profile == FanProfile::Quiet && e.to_string().contains("NotSupported") => {
+            proxy
+                .set_platform_profile(FanProfile::LowPower as u32)
+                .await
+                .map(|_| FanProfile::LowPower)
+                .map_err(|e2| t!("error_fan_profile_write", error = e2.to_string()).to_string())
+        }
+        Err(e) => Err(t!("error_fan_profile_write", error = e.to_string()).to_string()),
+    }
 }
 
 #[zbus::proxy(
