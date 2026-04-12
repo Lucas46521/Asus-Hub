@@ -42,10 +42,10 @@ pub struct ColorGamutModel {
 impl ColorGamutModel {
     fn color_gamut_description(&self) -> std::borrow::Cow<'static, str> {
         match self.color_gamut_index {
-            1 => t!("farbskala_desc_srgb"),
-            2 => t!("farbskala_desc_dcip3"),
-            3 => t!("farbskala_desc_displayp3"),
-            _ => t!("farbskala_desc_native"),
+            1 => t!("color_gamut_desc_srgb"),
+            2 => t!("color_gamut_desc_dcip3"),
+            3 => t!("color_gamut_desc_displayp3"),
+            _ => t!("color_gamut_desc_native"),
         }
     }
 }
@@ -71,11 +71,11 @@ impl Component for ColorGamutModel {
 
     view! {
         adw::PreferencesGroup {
-            set_title: &t!("farbskala_group_title"),
-            set_description: Some(&t!("farbskala_group_desc")),
+            set_title: &t!("color_gamut_group_title"),
+            set_description: Some(&t!("color_gamut_group_desc")),
 
             add = &adw::ComboRow {
-                set_title: &t!("farbskala_title"),
+                set_title: &t!("color_gamut_title"),
                 #[watch]
                 set_subtitle: &model.color_gamut_description(),
                 set_model: Some(&gamut_list),
@@ -95,7 +95,7 @@ impl Component for ColorGamutModel {
     ) -> ComponentParts<Self> {
         let config = AppConfig::load();
 
-        let native = t!("farbskala_option_native");
+        let native = t!("color_gamut_option_native");
         let gamut_list = gtk::StringList::new(&[&native, "sRGB", "DCI-P3", "Display P3"]);
 
         let model = ColorGamutModel {
@@ -131,7 +131,7 @@ impl Component for ColorGamutModel {
                 if let Some(base) = self.icm_base_path.clone() {
                     apply_profile(index, base, &sender);
                 } else {
-                    tracing::warn!("{}", t!("farbskala_icm_path_not_ready"));
+                    tracing::warn!("{}", t!("color_gamut_icm_path_not_ready"));
                 }
             }
         }
@@ -147,7 +147,7 @@ impl Component for ColorGamutModel {
             ColorGamutCommandOutput::IcmReady(path) => {
                 tracing::info!(
                     "{}",
-                    t!("farbskala_icm_ready", path = path.display().to_string())
+                    t!("color_gamut_icm_ready", path = path.display().to_string())
                 );
                 if self.color_gamut_index > 0 {
                     apply_profile(self.color_gamut_index, path.clone(), &sender);
@@ -157,7 +157,7 @@ impl Component for ColorGamutModel {
             ColorGamutCommandOutput::ProfileApplied(index) => {
                 tracing::info!(
                     "{}",
-                    t!("farbskala_profile_applied", index = index.to_string())
+                    t!("color_gamut_profile_applied", index = index.to_string())
                 );
             }
             ColorGamutCommandOutput::Error(e) => {

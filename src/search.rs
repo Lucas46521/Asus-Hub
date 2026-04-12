@@ -60,14 +60,14 @@ static SEARCH_INDEX: &[SearchItem] = &[
         component_key: "oled_dimming",
     },
     SearchItem {
-        title_key: "zielmodus_group_title",
+        title_key: "target_mode_group_title",
         page_icon: "monitor-symbolic",
         page_title_key: "tab_display",
         page_name: "display",
         component_key: "target_mode",
     },
     SearchItem {
-        title_key: "zielmodus_switch_title",
+        title_key: "target_mode_switch_title",
         page_icon: "monitor-symbolic",
         page_title_key: "tab_display",
         page_name: "display",
@@ -95,7 +95,7 @@ static SEARCH_INDEX: &[SearchItem] = &[
         component_key: "oled_care",
     },
     SearchItem {
-        title_key: "farbskala_title",
+        title_key: "color_gamut_title",
         page_icon: "monitor-symbolic",
         page_title_key: "tab_display",
         page_name: "display",

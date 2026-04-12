@@ -114,11 +114,11 @@ impl Component for SoundModesModel {
 
         let options = gtk::StringList::new(&[
             &t!("audio_profile_film"),
-            &t!("audio_profile_musik"),
+            &t!("audio_profile_music"),
             &t!("audio_profile_none"),
-            &t!("audio_profile_optimiert"),
+            &t!("audio_profile_optimized"),
             &t!("audio_profile_video"),
-            &t!("audio_profile_sprache"),
+            &t!("audio_profile_voice"),
             &t!("audio_profile_custom"),
         ]);
         let dropdown = gtk::DropDown::new(Some(options), gtk::Expression::NONE);

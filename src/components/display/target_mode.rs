@@ -49,13 +49,13 @@ impl Component for TargetModeModel {
 
     view! {
         adw::PreferencesGroup {
-            set_title: &t!("zielmodus_group_title"),
-            set_description: Some(&t!("zielmodus_group_desc")),
+            set_title: &t!("target_mode_group_title"),
+            set_description: Some(&t!("target_mode_group_desc")),
 
             add = &gtk::Label {
                 #[watch]
                 set_visible: !model.kde_available,
-                set_label: &t!("zielmodus_kde_required"),
+                set_label: &t!("target_mode_kde_required"),
                 add_css_class: "error",
                 set_wrap: true,
                 set_xalign: 0.0,
@@ -66,8 +66,8 @@ impl Component for TargetModeModel {
             },
 
             add = &adw::SwitchRow {
-                set_title: &t!("zielmodus_switch_title"),
-                set_subtitle: &t!("zielmodus_switch_subtitle"),
+                set_title: &t!("target_mode_switch_title"),
+                set_subtitle: &t!("target_mode_switch_subtitle"),
 
                 #[watch]
                 set_active: model.active,
@@ -151,7 +151,7 @@ impl Component for TargetModeModel {
                 AppConfig::update(|c| c.target_mode_active = active);
             }
             TargetModeCommandOutput::ActiveSet(active) => {
-                tracing::info!("{}", t!("zielmodus_aktiv_set", value = active.to_string()));
+                tracing::info!("{}", t!("target_mode_active_set", value = active.to_string()));
             }
             TargetModeCommandOutput::Error(e) => {
                 let _ = sender.output(e);
