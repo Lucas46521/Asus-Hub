@@ -20,7 +20,7 @@ use relm4::adw::prelude::*;
 use relm4::prelude::*;
 use rust_i18n::t;
 
-use crate::services::commands::pkexec_shell;
+use crate::services::commands::{pkexec_shell, read_file_host};
 use crate::services::config::AppConfig;
 use crate::services::dbus;
 
@@ -183,7 +183,7 @@ impl Component for BatteryModel {
         sender.command(|out, shutdown| {
             shutdown
                 .register(async move {
-                    match tokio::fs::read_to_string("/sys/power/mem_sleep").await {
+                    match read_file_host("/sys/power/mem_sleep").await {
                         Ok(content) => {
                             let active = content.contains("[deep]");
                             let supported = content.contains("deep");

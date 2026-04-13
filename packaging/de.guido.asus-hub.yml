@@ -1,0 +1,43 @@
+app-id: de.guido.asus-hub
+runtime: org.gnome.Platform
+runtime-version: '46'
+sdk: org.gnome.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+command: asus-hub
+
+finish-args:
+  # GTK / display
+  - --share=ipc
+  - --socket=fallback-x11
+  - --socket=wayland
+  - --device=dri
+  # Config persistence in ~/.config/asus-hub/
+  - --persist=.config/asus-hub
+  # System bus – hardware daemons (asusd, supergfxctl)
+  - --system-talk-name=xyz.ljones.Asusd
+  - --system-talk-name=org.supergfxctl.Daemon
+  # Session bus – KDE / power management
+  - --talk-name=org.kde.Solid.PowerManagement
+  - --talk-name=org.kde.KWin
+  - --talk-name=org.kde.plasmashell
+  - --talk-name=org.kde.kglobalaccel
+  # Required for flatpak-spawn --host (host command execution)
+  - --talk-name=org.freedesktop.Flatpak
+
+modules:
+  - name: asus-hub
+    buildsystem: simple
+    build-options:
+      append-path: /usr/lib/sdk/rust-stable/bin
+      env:
+        CARGO_HOME: /run/build/asus-hub/cargo
+    build-commands:
+      - cargo build --release --manifest-path Cargo.toml
+      - install -Dm755 target/release/asus-hub -t /app/bin/
+      - install -Dm644 packaging/de.guido.asus-hub.desktop -t /app/share/applications/
+      - install -Dm644 packaging/de.guido.asus-hub.metainfo.xml -t /app/share/metainfo/
+      - install -Dm644 assets/trayicon.png /app/share/icons/hicolor/128x128/apps/de.guido.asus-hub.png
+    sources:
+      - type: dir
+        path: ..
