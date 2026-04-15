@@ -374,7 +374,7 @@ fn start_sensor_loop(
             Ok(c) => c,
             Err(e) => {
                 out.emit(AutoBacklightCommandOutput::Error(
-                    t!("error_dbus_connection", error = e.to_string()).to_string(),
+                    t!("error_dbus_connect", error = e.to_string()).to_string(),
                 ));
                 return;
             }
