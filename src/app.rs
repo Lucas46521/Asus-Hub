@@ -23,6 +23,7 @@ use crate::components::display::ColorGamutModel;
 use crate::components::display::OledCareModel;
 use crate::components::display::OledDimmingModel;
 use crate::components::display::TargetModeModel;
+use crate::components::home::HomeModel;
 use crate::components::keyboard::AutoBacklightModel;
 use crate::components::keyboard::BacklightIdleModel;
 use crate::components::keyboard::FnKeyModel;
@@ -54,6 +55,7 @@ pub struct AppModel {
     window: gtk4::glib::WeakRef<adw::ApplicationWindow>,
     toast_overlay: adw::ToastOverlay,
     _tray: ksni::Handle<tray::AsusTray>,
+    home: Controller<HomeModel>,
     apu_mem: Controller<ApuMemModel>,
     battery: Controller<BatteryModel>,
     fan: Controller<FanModel>,
@@ -133,6 +135,9 @@ impl SimpleComponent for AppModel {
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let error_handler = |msg: String| AppMsg::Error(msg);
+        let home = HomeModel::builder()
+            .launch(())
+            .forward(sender.input_sender(), error_handler);
         let apu_mem = ApuMemModel::builder()
             .launch(())
             .forward(sender.input_sender(), error_handler);
@@ -192,6 +197,7 @@ impl SimpleComponent for AppModel {
             window: root.downgrade(),
             toast_overlay,
             _tray: tray_handle,
+            home,
             apu_mem,
             battery,
             fan,
@@ -209,6 +215,7 @@ impl SimpleComponent for AppModel {
             volume_widget,
         };
 
+        let home_widget = model.home.widget();
         let apu_mem_widget = model.apu_mem.widget();
         let battery_widget = model.battery.widget();
         let fan_widget = model.fan.widget();
@@ -311,6 +318,10 @@ impl SimpleComponent for AppModel {
 
         let widget_map = std::collections::HashMap::from([
             (
+                "home_info",
+                home_widget.clone().upcast::<gtk4::Widget>(),
+            ),
+            (
                 "oled_dimming",
                 oled_dimming_widget.clone().upcast::<gtk4::Widget>(),
             ),
@@ -351,15 +362,20 @@ impl SimpleComponent for AppModel {
 
         // ViewStack for the content area
 
+        let home_scroll = gtk4::ScrolledWindow::new();
+        home_scroll.set_child(Some(home_widget));
+        home_scroll.set_vexpand(true);
+
         let content_stack = adw::ViewStack::new();
         content_stack.set_transition_duration(250);
         content_stack.set_enable_transitions(true);
+        content_stack.add_named(&home_scroll, Some("home"));
         content_stack.add_named(&display_page, Some("display"));
         content_stack.add_named(&keyboard_page, Some("keyboard"));
         content_stack.add_named(&touchpad_page, Some("touchpad"));
         content_stack.add_named(&audio_page, Some("audio"));
         content_stack.add_named(&system_page, Some("system"));
-        content_stack.set_visible_child_name("display");
+        content_stack.set_visible_child_name("home");
 
         let content_header = adw::HeaderBar::new();
         let content_toolbar = adw::ToolbarView::new();
@@ -374,6 +390,18 @@ impl SimpleComponent for AppModel {
         sidebar_list.set_selection_mode(gtk4::SelectionMode::Single);
 
         let sorted_nav = Rc::new(sorted_nav_items());
+
+        sidebar_list.set_header_func(|row, _before| {
+            if row.index() == 1 {
+                let sep = gtk4::Separator::new(gtk4::Orientation::Horizontal);
+                sep.set_margin_top(4);
+                sep.set_margin_bottom(4);
+                sep.add_css_class("nav-separator");
+                row.set_header(Some(&sep));
+            } else {
+                row.set_header(None::<&gtk4::Widget>);
+            }
+        });
 
         for (icon_name, title_key, _page_name) in sorted_nav.iter() {
             let row = gtk4::ListBoxRow::new();

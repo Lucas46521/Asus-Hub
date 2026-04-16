@@ -21,7 +21,8 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 // (icon, i18n-key, stack-name)
-pub const NAV_ITEMS: [(&str, &str, &str); 5] = [
+pub const NAV_ITEMS: [(&str, &str, &str); 6] = [
+    ("go-home-symbolic", "tab_home", "home"),
     ("video-display-symbolic", "tab_display", "display"),
     ("input-keyboard-symbolic", "tab_keyboard", "keyboard"),
     ("input-touchpad-symbolic", "tab_touchpad", "touchpad"),
@@ -31,7 +32,15 @@ pub const NAV_ITEMS: [(&str, &str, &str); 5] = [
 
 pub fn sorted_nav_items() -> Vec<(&'static str, &'static str, &'static str)> {
     let mut items: Vec<_> = NAV_ITEMS.iter().copied().collect();
-    items.sort_by(|a, b| t!(a.1).as_ref().cmp(t!(b.1).as_ref()));
+    // Home is always pinned first; the rest are sorted alphabetically.
+    let home_pos = items.iter().position(|&(_, _, n)| n == "home");
+    if let Some(idx) = home_pos {
+        let home = items.remove(idx);
+        items.sort_by(|a, b| t!(a.1).as_ref().cmp(t!(b.1).as_ref()));
+        items.insert(0, home);
+    } else {
+        items.sort_by(|a, b| t!(a.1).as_ref().cmp(t!(b.1).as_ref()));
+    }
     items
 }
 
@@ -44,6 +53,28 @@ struct SearchItem {
 }
 
 static SEARCH_INDEX: &[SearchItem] = &[
+    // Home
+    SearchItem {
+        title_key: "home_board_title",
+        page_icon: "go-home-symbolic",
+        page_title_key: "tab_home",
+        page_name: "home",
+        component_key: "home_info",
+    },
+    SearchItem {
+        title_key: "home_bios_title",
+        page_icon: "go-home-symbolic",
+        page_title_key: "tab_home",
+        page_name: "home",
+        component_key: "home_info",
+    },
+    SearchItem {
+        title_key: "home_serial_title",
+        page_icon: "go-home-symbolic",
+        page_title_key: "tab_home",
+        page_name: "home",
+        component_key: "home_info",
+    },
     // Display
     SearchItem {
         title_key: "oled_dimming_group_title",

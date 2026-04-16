@@ -45,12 +45,34 @@ pub(crate) async fn run_command_blocking(program: &str, args: &[&str]) -> Result
     }
 }
 
-/// Runs a shell command with elevated privileges via `pkexec sh -c <command>`.
+/// Runs a shell command with elevated privileges and returns its stdout as a trimmed String.
 ///
-/// Prompts the user for authentication through the system's PolicyKit agent.
-/// Prefer this over embedding `sudo` calls directly in command strings.
-pub(crate) async fn pkexec_shell(command: &str) -> Result<(), String> {
-    run_command_blocking("pkexec", &["sh", "-c", command]).await
+/// Executes `pkexec sh -c <command>` and captures standard output.
+/// Returns `Err` on spawn failure, non-zero exit code, or task panic.
+pub(crate) async fn pkexec_read(command: &str) -> Result<String, String> {
+    let command = command.to_string();
+    let result = tokio::task::spawn_blocking(move || {
+        std::process::Command::new("pkexec")
+            .args(["sh", "-c", &command])
+            .output()
+    })
+    .await;
+
+    match result {
+        Ok(Ok(out)) if out.status.success() => {
+            Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
+        }
+        Ok(Ok(out)) => Err(t!(
+            "error_cmd_exit_code",
+            cmd = "pkexec",
+            code = out.status.code().unwrap_or(-1).to_string()
+        )
+        .to_string()),
+        Ok(Err(e)) => {
+            Err(t!("error_cmd_start", cmd = "pkexec", error = e.to_string()).to_string())
+        }
+        Err(e) => Err(t!("error_spawn_blocking", error = e.to_string()).to_string()),
+    }
 }
 
 static QDBUS_PATH: std::sync::OnceLock<String> = std::sync::OnceLock::new();

@@ -16,5 +16,6 @@
 
 pub mod audio;
 pub mod display;
+pub mod home;
 pub mod keyboard;
 pub mod system;

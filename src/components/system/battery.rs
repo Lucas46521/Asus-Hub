@@ -20,7 +20,7 @@ use relm4::adw::prelude::*;
 use relm4::prelude::*;
 use rust_i18n::t;
 
-use crate::services::commands::pkexec_shell;
+use crate::services::commands::pkexec_read;
 use crate::services::config::AppConfig;
 use crate::services::dbus;
 
@@ -252,7 +252,7 @@ impl Component for BatteryModel {
                             let value = if active { "deep" } else { "s2idle" };
                             let cmd = format!("echo {value} > /sys/power/mem_sleep");
 
-                            match pkexec_shell(&cmd).await {
+                            match pkexec_read(&cmd).await.map(|_| ()) {
                                 Ok(()) => out.emit(BatteryCommandOutput::DeepSleepSet(active)),
                                 Err(e) => out.emit(BatteryCommandOutput::Error(e)),
                             }
